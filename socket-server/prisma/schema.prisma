@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String       @id @map("_id")
+  name         String
+  email        String       @unique
+  Gender       gender?
+  description  String?
+  dob          String?
+  ProfileImage String?
+  languages    String[]
+  tools        String[]
+  frameworks   String[]
+  Type         String       @default("Interviewee")
+  Experience   Experience[]
+  Linkedin     String?
+  Github       String?
+  resume       String?
+  Twitter      String?
+  AvgRating    Int?
+  createdAt    DateTime     @default(now())
+
+  updatedAt DateTime   @default(now())
+  timeSlots TimeSlot[]
+
+  // mockInterviewer MockInterview[] @relation("Interviewer")
+  // mockInterviewee MockInterview[] @relation("Interviewee")
+  MockInterview MockInterview[]
+}
+
+enum gender {
+  male
+  female
+}
+
+model Experience {
+  id          String  @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String  @unique
+  CompanyName String?
+  Role        String?
+  Description String?
+  Duration    String?
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model MockInterview {
+  id              String @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String
+  // interviewerId String
+  // intervieweeId String
+  MockResponse    Json[]
+  jobPosition     String
+  jobDesc         String
+  jobexperience   String
+  difficultyLevel String
+  numQuestions    Int
+
+  createdAt DateTime     @default(now())
+  // interviewer   User         @relation("Interviewer", fields: [interviewerId], references: [id])
+  // interviewee   User         @relation("Interviewee", fields: [intervieweeId], references: [id])
+  answers   UserAnswer[]
+  User      User         @relation(fields: [userId], references: [id])
+}
+
+model UserAnswer {
+  id                   String              @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String
+  question             String
+  userAnswer           String
+  createdAt            DateTime            @default(now())
+  Intervieweefeedback  String
+  Intervieweerating    Int
+  correctAnswer        String?
+  mockInterviewId      String              @db.ObjectId
+  mockInterview        MockInterview?      @relation(fields: [mockInterviewId], references: [id])
+  InterviewGroup       InterviewGroup?     @relation(fields: [interviewGroupId], references: [id])
+  interviewGroupId     String?             @db.ObjectId
+  InterviewGroupUser   InterviewGroupUser? @relation(fields: [interviewGroupUserId], references: [id])
+  interviewGroupUserId String?             @db.ObjectId
+}
+
+model TimeSlot {
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String
+  startTime DateTime
+  endTime   DateTime
+  status    TimeSlotStatus @default(available)
+  createdAt DateTime       @default(now())
+  user      User           @relation(fields: [userId], references: [id])
+}
+
+enum TimeSlotStatus {
+  available
+  booked
+  cancelled
+}
+
+model InterviewGroup {
+  id                 String               @id @default(auto()) @map("_id") @db.ObjectId
+  publicId           String               @unique // For sharing via public link
+  name               String
+  createdBy          String // Admin user ID
+  dateTime           DateTime
+  role               String
+  skills             String
+  experience         String?
+  difficulty         String
+  createdAt          DateTime             @default(now())
+  answer             UserAnswer[]
+  InterviewGroupUser InterviewGroupUser[]
+}
+
+model InterviewGroupUser {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId         String
+  name           String?
+  email          String?
+  imageUrl       String?
+  groupId        String  @db.ObjectId
+  isReady        Boolean @default(false)
+  totalScore     Int     @default(0)
+  correctAnswers Int     @default(0)
+  totalAnswers   Int     @default(0)
+
+  answers UserAnswer[]
+  group   InterviewGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, groupId])
+  @@index([groupId])
+}

@@ -1,0 +1,16 @@
+export const frameworkTags = [
+    { value: "React", label: "React" },
+    { value: "Angular", label: "Angular" },
+    { value: "Vue.js", label: "Vue.js" },
+    { value: "Next.js", label: "Next.js" },
+    { value: "Django", label: "Django" },
+    { value: "Flask", label: "Flask" },
+    { value: "Express", label: "Express" },
+    { value: "Spring Boot", label: "Spring Boot" },
+    { value: "Laravel", label: "Laravel" },
+    { value: "Ruby on Rails", label: "Ruby on Rails" },
+    { value: "ASP.NET", label: "ASP.NET" },
+    { value: "Flutter", label: "Flutter" },
+    { value: "React Native", label: "React Native" },
+    { value: "Svelte", label: "Svelte" },
+];
