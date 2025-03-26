@@ -30,10 +30,12 @@ model User {
   updatedAt DateTime   @default(now())
   timeSlots TimeSlot[]
 
-  // mockInterviewer MockInterview[] @relation("Interviewer")
-  // mockInterviewee MockInterview[] @relation("Interviewee")
-  MockInterview MockInterview[]
-  Answer        Answer[]
+  MockInterview     MockInterview[]
+  Answer            Answer[]
+  AptitudeInterview AptitudeInterview[]
+  HRInterview       HRInterview[]
+  HRUserAnswer      HRUserAnswer[]
+  AptitudeQuestion  AptitudeQuestion[]
 }
 
 enum gender {
@@ -53,31 +55,123 @@ model Experience {
 }
 
 model MockInterview {
-  id              String @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String
-  // interviewerId String
-  // intervieweeId String
-  MockResponse    Json[]
-  jobPosition     String
-  jobDesc         String
-  jobexperience   String
-  difficultyLevel String
-  numQuestions    Int
-  interviewerImageId  Int
+  id                 String @id @default(auto()) @map("_id") @db.ObjectId
+  userId             String
+  MockResponse       Json[]
+  jobPosition        String
+  jobDesc            String
+  jobexperience      String
+  difficultyLevel    String
+  numQuestions       Int
+  interviewerImageId Int
 
   createdAt DateTime     @default(now())
-  // interviewer   User         @relation("Interviewer", fields: [interviewerId], references: [id])
-  // interviewee   User         @relation("Interviewee", fields: [intervieweeId], references: [id])
   answers   UserAnswer[]
   User      User         @relation(fields: [userId], references: [id])
 }
 
+model AptitudeInterview {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String
+  jobPosition     String
+  jobDesc         String
+  jobExperience   String
+  difficultyLevel String
+  totalQuestions  Int
+  totalScore      Int                @default(0)
+  passScore       Int?
+  questions       AptitudeQuestion[]
+  createdAt       DateTime           @default(now())
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model AptitudeQuestion {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  aptitudeInterviewId String   @db.ObjectId
+  text                String
+  options             String[]
+  correctAnswer       String
+  userAnswer          String?
+  explanation         String?
+  category            String? // e.g., Quantitative, Logical, Verbal
+  difficulty          String
+  timeLimit           Int      @default(60) // in seconds
+  isCorrect           Boolean  @default(false)
+  score               Int      @default(1)
+  userId              String?
+  createdAt           DateTime @default(now())
+
+  AptitudeInterview AptitudeInterview @relation(fields: [aptitudeInterviewId], references: [id], onDelete: Cascade)
+  User              User?             @relation(fields: [userId], references: [id])
+
+  @@index([aptitudeInterviewId])
+}
+
+model HRInterview {
+  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String
+  jobPosition     String
+  jobDesc         String
+  jobExperience   String
+  difficultyLevel String
+  numQuestions    Int
+  questions       HRQuestion[]
+  userAnswers     HRUserAnswer[]
+  createdAt       DateTime       @default(now())
+
+  User User @relation(fields: [userId], references: [id])
+}
+
+model HRQuestion {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  hrInterviewId     String   @db.ObjectId
+  text              String
+  category          String? // e.g., Behavioral, Situational, Technical
+  expectedKeyPoints String[] // key points to look for in the answer
+  maxScore          Int      @default(10)
+  timeLimit         Int      @default(120) // in seconds
+  createdAt         DateTime @default(now())
+
+  HRInterview HRInterview    @relation(fields: [hrInterviewId], references: [id], onDelete: Cascade)
+  userAnswers HRUserAnswer[]
+
+  @@index([hrInterviewId])
+}
+
+model HRUserAnswer {
+  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
+  hrInterviewId       String   @db.ObjectId
+  hrQuestionId        String   @db.ObjectId
+  userId              String
+  userAnswer          String
+  evaluationFeedback  Json? // Detailed AI-generated feedback
+  score               Int? // Score based on evaluation
+  matchedKeyPoints    String[] // Key points matched in the answer
+  voiceTone           String?
+  confidence          String?
+  bodyLanguage        String?
+  facialExpressions   String?
+  speakingPace        String?
+  overallPresentation String?
+  videoUrl            String?
+  createdAt           DateTime @default(now())
+
+  HRInterview HRInterview @relation(fields: [hrInterviewId], references: [id], onDelete: Cascade)
+  HRQuestion  HRQuestion  @relation(fields: [hrQuestionId], references: [id], onDelete: Cascade)
+  User        User        @relation(fields: [userId], references: [id])
+
+  @@unique([hrInterviewId, hrQuestionId, userId])
+  @@index([hrInterviewId])
+  @@index([hrQuestionId])
+}
+
 model UserAnswer {
-  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  id                     String              @id @default(auto()) @map("_id") @db.ObjectId
   userId                 String
   question               String
   userAnswer             String
-  createdAt              DateTime @default(now())
+  createdAt              DateTime            @default(now())
   Intervieweefeedback    String
   Intervieweerating      Int
   voiceTone              String
@@ -88,18 +182,13 @@ model UserAnswer {
   overallPresentation    String
   improvementSuggestions String
   videoUrl               String
-  // InterviewerFeedback String?
-  // InterviewerRating   Int?
-  // interviewerId       String
-  // intervieweeId       String
-
-  correctAnswer        String?
-  mockInterviewId      String              @db.ObjectId
-  mockInterview        MockInterview?      @relation(fields: [mockInterviewId], references: [id])
-  InterviewGroup       InterviewGroup?     @relation(fields: [interviewGroupId], references: [id])
-  interviewGroupId     String?             @db.ObjectId
-  InterviewGroupUser   InterviewGroupUser? @relation(fields: [interviewGroupUserId], references: [id])
-  interviewGroupUserId String?             @db.ObjectId
+  correctAnswer          String?
+  mockInterviewId        String              @db.ObjectId
+  mockInterview          MockInterview?      @relation(fields: [mockInterviewId], references: [id])
+  InterviewGroup         InterviewGroup?     @relation(fields: [interviewGroupId], references: [id])
+  interviewGroupId       String?             @db.ObjectId
+  InterviewGroupUser     InterviewGroupUser? @relation(fields: [interviewGroupUserId], references: [id])
+  interviewGroupUserId   String?             @db.ObjectId
 }
 
 model TimeSlot {
@@ -170,7 +259,6 @@ model Question {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  // Relations
   group                InterviewGroup      @relation(fields: [groupId], references: [id], onDelete: Cascade)
   answers              Answer[]
   InterviewGroupUser   InterviewGroupUser? @relation(fields: [interviewGroupUserId], references: [id])
@@ -189,7 +277,6 @@ model Answer {
   score         Int?
   feedback      Json?
 
-  // Relations
   question    Question           @relation(fields: [questionId], references: [id], onDelete: Cascade)
   participant InterviewGroupUser @relation(fields: [participantId], references: [id], onDelete: Cascade)
   user        User               @relation(fields: [userId], references: [id], onDelete: Cascade)
