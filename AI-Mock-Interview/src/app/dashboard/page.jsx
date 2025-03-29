@@ -2,6 +2,7 @@
 import Link from "next/link"
 import { useState } from "react"
 import AddMockInterview from './_components/AddMockInterview'
+import AddAptitude from "./_components/AddAptitude"
 import Footer from './_components/Footer'
 import AllInterviews from './_components/allInterviews'
 function page() {
@@ -40,6 +41,9 @@ function page() {
 
             <div className='py-10'>
               <AllInterviews/>
+            </div>
+            <div>
+              <AddAptitude/>
             </div>
           </div>
         </div>
