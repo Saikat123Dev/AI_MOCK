@@ -51,7 +51,6 @@ peerServer.on('connection', (client) => {
     activeCalls.set(callId, peers);
   }
 
-  // Check if call is full
   if (peers.size >= 2) {
     console.log(`[${new Date().toISOString()}] Call ${callId} is full (${peers.size} connections)`);
     client.close();

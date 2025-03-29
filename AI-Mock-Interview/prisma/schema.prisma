@@ -26,9 +26,8 @@ model User {
   Twitter      String?
   AvgRating    Int?
   createdAt    DateTime     @default(now())
-
-  updatedAt DateTime   @default(now())
-  timeSlots TimeSlot[]
+  updatedAt    DateTime     @default(now())
+  timeSlots    TimeSlot[]
 
   MockInterview     MockInterview[]
   Answer            Answer[]
@@ -86,6 +85,12 @@ model AptitudeInterview {
   User User @relation(fields: [userId], references: [id])
 }
 
+enum QuestionType {
+  MAIN
+  FOLLOWUP
+  PROBING
+}
+
 model AptitudeQuestion {
   id                  String   @id @default(auto()) @map("_id") @db.ObjectId
   aptitudeInterviewId String   @db.ObjectId
@@ -94,9 +99,9 @@ model AptitudeQuestion {
   correctAnswer       String
   userAnswer          String?
   explanation         String?
-  category            String? // e.g., Quantitative, Logical, Verbal
+  category            String?
   difficulty          String
-  timeLimit           Int      @default(60) // in seconds
+  timeLimit           Int      @default(60)
   isCorrect           Boolean  @default(false)
   score               Int      @default(1)
   userId              String?
@@ -109,61 +114,81 @@ model AptitudeQuestion {
 }
 
 model HRInterview {
-  id              String         @id @default(auto()) @map("_id") @db.ObjectId
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   userId          String
   jobPosition     String
-  jobDesc         String
+  jobDescription  String
   jobExperience   String
+  skills          String[]
   difficultyLevel String
-  numQuestions    Int
-  questions       HRQuestion[]
-  userAnswers     HRUserAnswer[]
-  createdAt       DateTime       @default(now())
+  resumeUrl       String?
+  totalScore      Int      @default(0)
+  passScore       Int?
+  createdAt       DateTime @default(now())
 
-  User User @relation(fields: [userId], references: [id])
+  user      User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questions HRQuestion[]
 }
 
 model HRQuestion {
-  id                String   @id @default(auto()) @map("_id") @db.ObjectId
-  hrInterviewId     String   @db.ObjectId
+  id                String       @id @default(auto()) @map("_id") @db.ObjectId
+  hrInterviewId     String       @db.ObjectId
   text              String
-  category          String? // e.g., Behavioral, Situational, Technical
-  expectedKeyPoints String[] // key points to look for in the answer
-  maxScore          Int      @default(10)
-  timeLimit         Int      @default(120) // in seconds
-  createdAt         DateTime @default(now())
+  type              QuestionType @default(MAIN)
+  category          String?
+  expectedKeyPoints String[]
+  maxScore          Int?         @default(10)
+  timeLimit         Int?         @default(120)
+  createdAt         DateTime     @default(now())
 
-  HRInterview HRInterview    @relation(fields: [hrInterviewId], references: [id], onDelete: Cascade)
-  userAnswers HRUserAnswer[]
+  hrInterview HRInterview @relation(fields: [hrInterviewId], references: [id], onDelete: Cascade)
+
+  followUpQuestions HRFollowUpQuestion[]
+  userAnswer        HRUserAnswer?
 
   @@index([hrInterviewId])
 }
 
+// HRQuestion --> []HRFollowUpQuestion --> []ans connected to each questions
+model HRFollowUpQuestion {
+  id                String       @id @default(auto()) @map("_id") @db.ObjectId
+  mainQuestionId    String       @db.ObjectId
+  text              String
+  type              QuestionType @default(FOLLOWUP)
+  category          String?
+  expectedKeyPoints String[]
+  maxScore          Int?         @default(5)
+  timeLimit         Int?         @default(90)
+  createdAt         DateTime     @default(now())
+
+  mainQuestion         HRQuestion     @relation(fields: [mainQuestionId], references: [id], onDelete: Cascade)
+  hRFollowUpQuestionId String?        @db.ObjectId
+  HRUserAnswer         HRUserAnswer[]
+
+  @@index([mainQuestionId])
+}
+
 model HRUserAnswer {
-  id                  String   @id @default(auto()) @map("_id") @db.ObjectId
-  hrInterviewId       String   @db.ObjectId
-  hrQuestionId        String   @db.ObjectId
-  userId              String
-  userAnswer          String
-  evaluationFeedback  Json? // Detailed AI-generated feedback
-  score               Int? // Score based on evaluation
-  matchedKeyPoints    String[] // Key points matched in the answer
-  voiceTone           String?
-  confidence          String?
-  bodyLanguage        String?
-  facialExpressions   String?
-  speakingPace        String?
-  overallPresentation String?
-  videoUrl            String?
-  createdAt           DateTime @default(now())
+  id                    String              @id @default(auto()) @map("_id") @db.ObjectId
+  hrQuestionId          String              @unique @db.ObjectId
+  hrfollowupquestionsId String              @db.ObjectId
+  userId                String
+  userAnswer            String
+  evaluationFeedback    String?
+  score                 Int?
+  matchedKeyPoints      String[]
+  voiceTone             String?
+  confidence            String?
+  bodyLanguage          String?
+  facialExpressions     String?
+  speakingPace          String?
+  overallPresentation   String?
+  videoUrl              String?
+  createdAt             DateTime            @default(now())
+  followup              HRFollowUpQuestion? @relation(fields: [hrfollowupquestionsId], references: [id], onDelete: Cascade)
 
-  HRInterview HRInterview @relation(fields: [hrInterviewId], references: [id], onDelete: Cascade)
-  HRQuestion  HRQuestion  @relation(fields: [hrQuestionId], references: [id], onDelete: Cascade)
-  User        User        @relation(fields: [userId], references: [id])
-
-  @@unique([hrInterviewId, hrQuestionId, userId])
-  @@index([hrInterviewId])
-  @@index([hrQuestionId])
+  hrQuestion HRQuestion @relation(fields: [hrQuestionId], references: [id])
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model UserAnswer {
@@ -209,14 +234,14 @@ enum TimeSlotStatus {
 
 model InterviewGroup {
   id                 String               @id @default(auto()) @map("_id") @db.ObjectId
-  publicId           String               @unique // For sharing via public link
+  publicId           String               @unique
   name               String
-  createdBy          String // Admin user ID
+  createdBy          String
   dateTime           DateTime
   isStarted          Boolean              @default(false)
   isEnded            Boolean              @default(false)
   role               String
-  timeLimit          Int                  @default(60) // in seconds
+  timeLimit          Int                  @default(60)
   skills             String[]
   questionNo         Int                  @default(5)
   isActive           Boolean              @default(true)
@@ -255,7 +280,7 @@ model Question {
   groupId       String   @db.ObjectId
   text          String
   correctAnswer String
-  timeLimit     Int      @default(60) // in seconds
+  timeLimit     Int      @default(60)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
