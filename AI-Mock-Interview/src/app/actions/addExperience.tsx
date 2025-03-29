@@ -27,27 +27,32 @@ export const addExperiences = async (
     if (!user) {
       return { error: "Unauthorized" };
     }
+
     console.log(user);
 
     const experiences = await db.$transaction(
       validatedData.experiences.map((experience) =>
-        db.experience.update({
-          where:{
+        db.experience.upsert({
+          where: {
             userId:user.id
           },
-        data: {
-         
-            CompanyName: experience.company,
-            Duration: experience.duration,
+          update: {
             Role: experience.role,
+            Duration: experience.duration,
             Description: experience.description || "",
+          },
+          create: {
             userId: user.id,
+            CompanyName: experience.company,
+            Role: experience.role,
+            Duration: experience.duration,
+            Description: experience.description || "",
           },
         })
       )
     );
 
-    console.log("experiences uploaded successfully");
+    console.log("Experiences uploaded successfully");
     return { success: "Experiences updated successfully" };
   } catch (error) {
     console.error("Error updating experiences:", error);
@@ -58,21 +63,16 @@ export const addExperiences = async (
   }
 };
 
-export const getExperiences=async(userId:any)=>{
+export const getExperiences = async (userId: any) => {
   try {
-   
-    const getExperiences=await db.experience.findMany(
-      {
-        where:{
-          userId:userId
-        }
-      }
-    )
-    return { success: true,getExperiences };
-
-
-  }catch(error){
-    console.error("Error fetching projects:", error);
+    const getExperiences = await db.experience.findMany({
+      where: {
+        userId: userId,
+      },
+    });
+    return { success: true, getExperiences };
+  } catch (error) {
+    console.error("Error fetching experiences:", error);
     return { error: "Something went wrong! Please try again." };
   }
-}
+};

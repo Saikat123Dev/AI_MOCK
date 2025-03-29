@@ -4,7 +4,7 @@ import { Calendar, Edit, FileText, Mail, MessageSquare, Share2, Star, ThumbsUp, 
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import Navbar from '../../dashboard/_components/navbar';
+
 
 export default function ProfilePage() {
     const router = useRouter();
@@ -96,7 +96,7 @@ export default function ProfilePage() {
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-[#1a2331] to-[#2c3e50] text-white">
-            <Navbar />
+          
 
             <div className="container mx-auto px-4 py-8">
                 {/* Profile Header */}

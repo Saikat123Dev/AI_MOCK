@@ -1,11 +1,11 @@
 import React from 'react'
-import Navbar from '../dashboard/_components/navbar'
+
 import Footer from '../dashboard/_components/Footer'
 
 function page() {
   return (
     <div className="min-h-screen bg-[#232a34] text-white">
-      <Navbar/>
+   
       
       <main className="container mx-auto px-4 py-16">
         <section className="max-w-4xl mx-auto">
